@@ -1,0 +1,1062 @@
+note synapse-mcp 10mcp.om: MCP stdio server (JSON-RPC 2.0, one message per line) over the coordination CLIs.
+note Every tool is one fixed argv executed without a shell; argument values are separate argv records.
+global gop ulong 4
+global gopl ulong 4
+global gid ulong 2
+global gbad ulong 2
+global gq ulong 4
+
+text musage "usage: synapse-mcp --bin-dir DIR [--home DIR]"
+text mbindir "--bin-dir"
+text mhome "--home"
+text menvh "AIEN_COORD_HOME="
+text menvhm "HOME="
+text mdhome "/.local/state/aien-coord"
+text mnohome "synapse-mcp: no --home, AIEN_COORD_HOME or HOME"
+text mnobin "synapse-mcp: --bin-dir must be an absolute directory"
+text mempty ""
+text mkjrpc "jsonrpc"
+text mk20 "2.0"
+text mkid "id"
+text mkmeth "method"
+text mkpar "params"
+text mkname "name"
+text mkargs "arguments"
+text mminit "initialize"
+text mmping "ping"
+text mmlist "tools/list"
+text mmcall "tools/call"
+text mrpre "{\"jsonrpc\":\"2.0\",\"id\":"
+text mridnul "null"
+text mrres ",\"result\":"
+text mrerr ",\"error\":{\"code\":"
+text mrmsg ",\"message\":\""
+text mrend "\"}}\n"
+text mrclose "}\n"
+text mrinit "{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"synapse-mcp\",\"version\":\"0.1.0\"},\"instructions\":\"AIEN coordination tools: claim before you work, check who holds a target, read drift findings.\"}"
+text mrempty "{}"
+text mrtext "{\"content\":[{\"type\":\"text\",\"text\":\""
+text mriserr "\"}],\"isError\":"
+text mtrue "true"
+text mfalse "false"
+text mexitc "{\"exit_code\":"
+text mwhoc "{\"who\":\""
+text mwhoe "\",\"exit_code\":"
+text mcl "}"
+text mmeparse "Parse error"
+text mmeinv "Invalid Request"
+text mmenome "Method not found"
+text mmeparm "Invalid params"
+text mmetool "Unknown tool"
+text mbadarg "Invalid params: bad or missing argument "
+text mbadunk "Invalid params: unknown argument"
+text mbadlong "Invalid params: arguments too long"
+text mbadobj "Invalid params: arguments must be an object"
+text mtoolong "synapse-mcp: request line over 1048576 bytes"
+
+text mbclaims "/synapse-claims"
+text mbmap "/synapse-map"
+text mbpulse "/synapse-pulse"
+text mbboard "/synapse-board"
+text mcclaim "claim"
+text mcrenew "renew"
+text mcrel "release"
+text mcstate "state"
+text mcwho "who"
+text mclist "list"
+text mcconf "conflicts"
+text mcver "verify"
+text mcwhere "where"
+text mctree "tree"
+text mccheck "check"
+text mcrun "run"
+text mcrender "render"
+text mfagent "--agent"
+text mfsess "--session"
+text mftarg "--target"
+text mfttl "--ttl"
+text mfmode "--mode"
+text mfstate "--state"
+text mfint "--intent"
+text mfevid "--evidence"
+text mfid "--id"
+text mfall "--all"
+text mfprefix "--agent-prefix"
+text mflimit "--limit"
+text mftext "--text"
+text mfalert "--alert"
+text mfcbin "--claims-bin"
+text mfclaims "--claims"
+text mfmap "--map"
+text mffind "--findings"
+text mfout "--out"
+text makagent "agent"
+text maksess "session"
+text maktarg "target"
+text makttl "ttl"
+text makmode "mode"
+text makstate "state"
+text makint "intent"
+text makevid "evidence"
+text makid "id"
+text makall "all"
+text maklane "lane"
+text maktask "task"
+text maklimit "limit"
+text maktext "text"
+text makalert "alert"
+text mkrepo "repo"
+text mrepoc "repo:"
+text mslboard "/board"
+text mslbcl "/board/claims.jsonl"
+text mslmap "/map.jsonl"
+text mslfind "/pulse/findings.jsonl"
+text mlisterr "synapse-mcp: synapse-claims list --all failed; board not rendered"
+
+text mtn01 "coord_where"
+text mtn02 "coord_tree"
+text mtn03 "coord_check"
+text mtn04 "coord_claim"
+text mtn05 "coord_renew"
+text mtn06 "coord_release"
+text mtn07 "coord_state"
+text mtn08 "coord_who"
+text mtn09 "coord_list"
+text mtn10 "coord_conflicts"
+text mtn11 "coord_verify"
+text mtn12 "coord_pulse"
+text mtn13 "coord_board"
+text mtn14 "coord_lane"
+
+text ml00 "{\"tools\":["
+text ml01 "{\"name\":\"coord_where\",\"description\":\"Rank aien-dev repositories for a task (synapse-map where) and show who holds claims on the top 3 (synapse-claims who repo:R).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"task\":{\"type\":\"string\",\"description\":\"plain-words task\"},\"limit\":{\"type\":\"integer\",\"minimum\":1}},\"required\":[\"task\"],\"additionalProperties\":false}},"
+text ml02 "{\"name\":\"coord_tree\",\"description\":\"Repository parent tree (synapse-map tree).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"boolean\"}},\"additionalProperties\":false}},"
+text ml03 "{\"name\":\"coord_check\",\"description\":\"Repository map findings: orphans, missing or archived parents, duplicate purposes (synapse-map check).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}},"
+text ml04 "{\"name\":\"coord_claim\",\"description\":\"Claim a target before working on it. Exit 2 means another agent holds it; the holder is returned.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"agent\":{\"type\":\"string\"},\"session\":{\"type\":\"string\"},\"target\":{\"type\":\"string\",\"description\":\"repo:O/R | branch:O/R#ref | path:O/R:glob | pr:O/R#N | ext:...\"},\"ttl\":{\"type\":\"integer\",\"minimum\":1},\"mode\":{\"type\":\"string\",\"enum\":[\"excl\",\"shared\"]},\"state\":{\"type\":\"string\"},\"intent\":{\"type\":\"string\"},\"evidence\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"agent\",\"session\",\"target\"],\"additionalProperties\":false}},"
+text ml05 "{\"name\":\"coord_renew\",\"description\":\"Extend a claim lease you hold.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"agent\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"ttl\":{\"type\":\"integer\",\"minimum\":1}},\"required\":[\"agent\",\"id\"],\"additionalProperties\":false}},"
+text ml06 "{\"name\":\"coord_release\",\"description\":\"Release a claim you hold, optionally with a final state and evidence.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"agent\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"state\":{\"type\":\"string\"},\"evidence\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"agent\",\"id\"],\"additionalProperties\":false}},"
+text ml07 "{\"name\":\"coord_state\",\"description\":\"Record a state change (e.g. PR_OPEN, MERGED) on a claim you hold.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"agent\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"state\":{\"type\":\"string\"},\"evidence\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"agent\",\"id\",\"state\"],\"additionalProperties\":false}},"
+text ml08 "{\"name\":\"coord_who\",\"description\":\"Active claims overlapping a target.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"target\":{\"type\":\"string\"}},\"required\":[\"target\"],\"additionalProperties\":false}},"
+text ml09 "{\"name\":\"coord_list\",\"description\":\"Active claims (all claims with all=true).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"all\":{\"type\":\"boolean\"}},\"additionalProperties\":false}},"
+text ml10 "{\"name\":\"coord_conflicts\",\"description\":\"Conflicting active claim pairs.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}},"
+text ml11 "{\"name\":\"coord_verify\",\"description\":\"Verify the claims ledger hash chain and signatures.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}},"
+text ml12 "{\"name\":\"coord_pulse\",\"description\":\"Reconcile claims with GitHub and live sessions; returns drift findings (synapse-pulse run).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"alert\":{\"type\":\"boolean\"}},\"additionalProperties\":false}},"
+text ml13 "{\"name\":\"coord_board\",\"description\":\"Render the generated board (BOARD.md, index.html) from claims, map and findings.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}},"
+text ml14 "{\"name\":\"coord_lane\",\"description\":\"Agents in a lane: active claims whose agent id starts with the lane prefix. Message these agents (parent and children) instead of agent://all.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"lane\":{\"type\":\"string\",\"description\":\"agent id prefix, e.g. Coordination\"}},\"required\":[\"lane\"],\"additionalProperties\":false}}"
+text ml99 "]}"
+
+note ======== output ========
+fn mc_flush m ulong to void
+n = syn_len m
+k = ulong 0
+while lt k n bound 999999
+w = write 1 gsp add m k sub n k
+if le w 0
+exit 70
+end
+k = add k ulong w
+end
+syn_rew m
+end
+
+fn mc_hex v ulong to uchar
+if lt v 10
+ret uchar add v 48
+end
+ret uchar add v 87
+end
+
+note mc_qb: append byte c JSON-escaped (no quotes)
+fn mc_qb c uchar to void
+if or eq c 34 eq c 92
+syn_pb 92
+syn_pb c
+ret
+end
+if eq c 10
+syn_pb 92
+syn_pb 110
+ret
+end
+if eq c 9
+syn_pb 92
+syn_pb 116
+ret
+end
+if eq c 13
+syn_pb 92
+syn_pb 114
+ret
+end
+if lt c 32
+syn_pb 92
+syn_pb 117
+syn_pb 48
+syn_pb 48
+syn_pb mc_hex shr ulong c 4
+syn_pb mc_hex and ulong c 15
+ret
+end
+syn_pb c
+end
+
+fn mc_qa a view uchar * o ulong n ulong to void
+for i ulong n
+mc_qb get a add o i
+end
+end
+
+fn mc_qt t view uchar * to void
+for i ulong len t
+mc_qb get t i
+end
+end
+
+fn mc_qp o ulong n ulong to void
+for i ulong n
+mc_qb get gsp add o i
+end
+end
+
+note mc_head: response prefix with the request id (or null)
+fn mc_head to ulong
+m = syn_mark
+syn_pt mrpre
+if eq get gid 1 0
+syn_pt mridnul
+else
+syn_ps get gid 0 get gid 1
+end
+ret m
+end
+
+fn mc_err code ulong msg view uchar * to void
+m = mc_head
+syn_pt mrerr
+syn_pb 45
+syn_pd code
+syn_pt mrmsg
+mc_qt msg
+syn_pt mrend
+mc_flush m
+end
+
+note mc_errp: error with a message held in the pool at (o,n)
+fn mc_errp code ulong o ulong n ulong to void
+m = mc_head
+syn_pt mrerr
+syn_pb 45
+syn_pd code
+syn_pt mrmsg
+mc_qp o n
+syn_pt mrend
+mc_flush m
+end
+
+fn mc_okt t view uchar * to void
+m = mc_head
+syn_pt mrres
+syn_pt t
+syn_pt mrclose
+mc_flush m
+end
+
+fn mc_list to void
+m = mc_head
+syn_pt mrres
+syn_pt ml00
+syn_pt ml01
+syn_pt ml02
+syn_pt ml03
+syn_pt ml04
+syn_pt ml05
+syn_pt ml06
+syn_pt ml07
+syn_pt ml08
+syn_pt ml09
+syn_pt ml10
+syn_pt ml11
+syn_pt ml12
+syn_pt ml13
+syn_pt ml14
+syn_pt ml99
+syn_pt mrclose
+mc_flush m
+end
+
+note ======== argument records ========
+note gbad 0: 0 ok, 1 bad value (gbad 1 = key text index), 2 unknown key, 3 too long, 4 not an object
+note gq 0: arguments consumed so far
+fn mc_bad k ulong why ulong to void
+if eq get gbad 0 0
+put gbad 0 why
+put gbad 1 k
+end
+end
+
+fn mc_room n ulong to bool
+if gt add add get gavs 0 n 16 4000
+ret false
+end
+if ge get gavs 1 60
+ret false
+end
+ret true
+end
+
+note mc_val: check decoded string tmp[0..n) and add it as one record; false when refused
+fn mc_val tmp view uchar * n ulong to bool
+if or eq n 0 eq get tmp 0 45
+ret false
+end
+for i ulong n
+if eq get tmp i 0
+ret false
+end
+end
+if not mc_room n
+put gbad 0 3
+ret false
+end
+m = syn_mark
+syn_pa tmp 0 n
+syn_ap m n
+syn_rew m
+ret true
+end
+
+fn mc_flag f view uchar * to bool
+if not mc_room len f
+put gbad 0 3
+ret false
+end
+syn_at f
+ret true
+end
+
+note mc_get: value token for key in args object a, or jsnone; counts the key as consumed
+fn mc_get src view uchar * tape view uint * a ulong key view uchar * to ulong
+if eq a jsnone
+ret jsnone
+end
+k = js_first tape a
+while ne k jsnone bound 999999
+if js_streq src js_off tape k key
+put gq 0 add get gq 0 1
+ret add k 1
+end
+k = js_mnext tape k
+end
+ret jsnone
+end
+
+note mc_str: string argument key as option flag (or positional when flag is empty); req: must be present
+fn mc_str src view uchar * tape view uint * a ulong tmp edit uchar * key view uchar * flag view uchar * to void
+v = mc_get src tape a key
+if eq v jsnone
+if eq get gq 1 1
+mc_bad 0 1
+end
+put gq 1 0
+ret
+end
+put gq 1 0
+if ne js_type tape v jsstr
+mc_bad 0 1
+ret
+end
+n = js_sget src js_off tape v tmp
+if lt n 0
+mc_bad 0 1
+ret
+end
+if gt len flag 0
+if not mc_flag flag
+ret
+end
+end
+if not mc_val tmp ulong n
+mc_bad 0 1
+end
+end
+
+note mc_int: integer argument (JSON unsigned integer >= 1) as option flag
+fn mc_int src view uchar * tape view uint * a ulong key view uchar * flag view uchar * to void
+v = mc_get src tape a key
+if eq v jsnone
+ret
+end
+if ne js_type tape v jsnum
+mc_bad 0 1
+ret
+end
+if not js_isu src js_off tape v
+mc_bad 0 1
+ret
+end
+x = js_tou src js_off tape v
+if or eq x 0 gt x 99999999
+mc_bad 0 1
+ret
+end
+if not mc_flag flag
+ret
+end
+m = syn_mark
+syn_pd x
+syn_ap m syn_len m
+syn_rew m
+end
+
+note mc_bool: boolean argument; true adds the flag
+fn mc_bool src view uchar * tape view uint * a ulong key view uchar * flag view uchar * to void
+v = mc_get src tape a key
+if eq v jsnone
+ret
+end
+t = js_type tape v
+if eq t jstrue
+r = mc_flag flag
+ret
+end
+if ne t jsfalse
+mc_bad 0 1
+end
+end
+
+note mc_arr: array of strings; each element becomes flag + value
+fn mc_arr src view uchar * tape view uint * a ulong tmp edit uchar * key view uchar * flag view uchar * to void
+v = mc_get src tape a key
+if eq v jsnone
+ret
+end
+if ne js_type tape v jsarr
+mc_bad 0 1
+ret
+end
+e = js_first tape v
+while ne e jsnone bound 999999
+if ne js_type tape e jsstr
+mc_bad 0 1
+ret
+end
+n = js_sget src js_off tape e tmp
+if lt n 0
+mc_bad 0 1
+ret
+end
+if not mc_flag flag
+ret
+end
+if not mc_val tmp ulong n
+mc_bad 0 1
+ret
+end
+e = js_enext tape e
+end
+end
+
+note mc_req1: mark the next mc_str as required
+fn mc_req1 to void
+put gq 1 1
+end
+
+note mc_bin: start an argv for CLI t in bin-dir, then --home H when home is set
+fn mc_bin t view uchar * home bool to void
+syn_ainit
+m = syn_mark
+syn_ps get gop 0 get gopl 0
+syn_pt t
+syn_ap m syn_len m
+syn_rew m
+if home
+syn_at mhome
+syn_ps get gop 1 get gopl 1
+m2 = sub syn_mark get gopl 1
+syn_ap m2 get gopl 1
+syn_rew m2
+end
+end
+
+note mc_done: true when the arguments were all consumed and valid, else sends -32602
+fn mc_done tape view uint * a ulong to bool
+if ne a jsnone
+if and eq get gbad 0 0 ne get gq 0 js_nkids tape a
+put gbad 0 2
+end
+end
+w = get gbad 0
+if eq w 0
+ret true
+end
+if eq w 2
+mc_err 32602 mbadunk
+ret false
+end
+if eq w 3
+mc_err 32602 mbadlong
+ret false
+end
+if eq w 4
+mc_err 32602 mbadobj
+ret false
+end
+mc_err 32602 mbadarg
+ret false
+end
+
+note ======== running ========
+note mc_runap: run gav, append stdout, exit line and (on failure) stderr, all JSON-escaped; returns exit code
+fn mc_runap obf edit uchar * to ulong
+n = syn_run obf 300000000000
+c = ulong get gxs 0
+mc_qa obf 0 n
+if and gt n 0 ne get obf sub n 1 10
+mc_qb 10
+end
+mc_qt mexitc
+syn_pd c
+mc_qt mcl
+mc_qb 10
+if gt get gxs 1 long n
+text mtrunc "[stdout truncated at 1048576 bytes]\n"
+mc_qt mtrunc
+end
+if ne c 0
+mc_qa gerrb 0 get gerrn 0
+end
+ret c
+end
+
+fn mc_tail c ulong to void
+syn_pt mriserr
+if and ne c 0 and ne c 1 ne c 2
+syn_pt mtrue
+else
+syn_pt mfalse
+end
+syn_pt mrclose
+syn_pb 125
+syn_pb 10
+end
+
+note mc_exec: run the prepared argv and send the tool result
+fn mc_exec to void
+obf = new uchar 1048576 0
+m = mc_head
+syn_pt mrres
+syn_pt mrtext
+c = mc_runap obf
+mc_tail c
+mc_flush m
+end
+
+note coord_where: map where, then claims who repo:R for the first three result repos
+fn mc_where src view uchar * tape edit uint * a ulong tmp edit uchar * to void
+mc_bin mbmap true
+syn_at mcwhere
+mc_req1
+mc_str src tape a tmp maktask mempty
+mc_int src tape a maklimit mflimit
+if not mc_done tape a
+ret
+end
+obf = new uchar 1048576 0
+m = mc_head
+syn_pt mrres
+syn_pt mrtext
+c = mc_runap obf
+n = ulong get gxs 1
+if gt n len obf
+n = len obf
+end
+r = js_init tape 65536 16
+rp = syn_mark
+k = ulong 0
+s = ulong 0
+for i ulong add n 1
+if or eq i n eq get obf min i sub len obf 1 10
+if and gt i s lt k 3
+q = js_parse part obf s sub i s tape sub i s
+if gt q 0
+v = pu_rmemb part obf s sub i s tape mkrepo
+if and ne v jsnone eq js_type tape v jsstr
+x = js_sget part obf s sub i s js_off tape v tmp
+if gt x 0
+syn_pt mrepoc
+syn_pa tmp 0 ulong x
+syn_pb 10
+k = add k 1
+end
+end
+end
+end
+s = add i 1
+end
+end
+mc_who3 obf rp k
+mc_tail c
+mc_flush m
+end
+
+note pu_rmemb: value token of key in the root object, or jsnone
+fn pu_rmemb src view uchar * tape view uint * key view uchar * to ulong
+if ne js_type tape 0 jsobj
+ret jsnone
+end
+k = js_first tape 0
+while ne k jsnone bound 999999
+if js_streq src js_off tape k key
+ret add k 1
+end
+k = js_mnext tape k
+end
+ret jsnone
+end
+
+note mc_who3: for each newline-terminated target in the pool from rp (k of them), run claims who
+fn mc_who3 obf edit uchar * rp ulong k ulong to void
+put gq 2 rp
+put gq 3 0
+for j ulong k
+p = get gq 2
+e = syn_find p 4096 0 10
+mc_bin mbclaims true
+syn_at mcwho
+syn_ap p e
+put gq 2 add add p e 1
+mc_who1 obf p e
+end
+end
+
+fn mc_who1 obf edit uchar * p ulong e ulong to void
+n = syn_run obf 300000000000
+c = ulong get gxs 0
+mc_qa obf 0 n
+if and gt n 0 ne get obf sub n 1 10
+mc_qb 10
+end
+mc_qt mwhoc
+mc_qp p e
+mc_qt mwhoe
+syn_pd c
+mc_qt mcl
+mc_qb 10
+if ne c 0
+mc_qa gerrb 0 get gerrn 0
+end
+end
+
+note coord_board: claims list --all into HOME/board/claims.jsonl, then board render
+fn mc_board tape view uint * a ulong to void
+if not mc_done tape a
+ret
+end
+obf = new uchar 1048576 0
+m = mc_head
+syn_pt mrres
+syn_pt mrtext
+mc_bin mbclaims true
+syn_at mclist
+syn_at mfall
+n = syn_run obf 300000000000
+c = ulong get gxs 0
+if or ne c 0 gt get gxs 1 long n
+mc_qt mlisterr
+mc_qb 10
+mc_qa gerrb 0 get gerrn 0
+mc_tail 70
+mc_flush m
+ret
+end
+d = syn_mark
+syn_ps get gop 1 get gopl 1
+syn_pt mslboard
+r = syn_mkdir d syn_len d
+syn_rew d
+mc_bpath mslbcl
+fd = syn_wbeg get gq 2 get gq 3
+if ge fd 0
+w = write int fd obf 0 n
+r = syn_wend fd get gq 2 get gq 3
+end
+mc_bin mbboard false
+syn_at mcrender
+syn_at mfclaims
+syn_ap get gq 2 get gq 3
+syn_at mfmap
+mc_bpath mslmap
+syn_ap get gq 2 get gq 3
+syn_at mffind
+mc_bpath mslfind
+syn_ap get gq 2 get gq 3
+syn_at mfout
+mc_bpath mslboard
+syn_ap get gq 2 get gq 3
+c = mc_runap obf
+mc_tail c
+mc_flush m
+end
+
+note mc_bpath: HOME + suffix t appended to the pool; gq 2, 3 = offset, length
+fn mc_bpath t view uchar * to void
+p = syn_mark
+syn_ps get gop 1 get gopl 1
+syn_pt t
+put gq 2 p
+put gq 3 syn_len p
+end
+
+note ======== tools/call ========
+fn mc_call src view uchar * tape edit uint * p ulong tmp edit uchar * to void
+put gbad 0 0
+put gq 0 0
+put gq 1 0
+if or eq p jsnone ne js_type tape p jsobj
+mc_err 32602 mmeparm
+ret
+end
+nt = pu_memb2 src tape p mkname
+if or eq nt jsnone ne js_type tape nt jsstr
+mc_err 32602 mmeparm
+ret
+end
+a = pu_memb2 src tape p mkargs
+if ne a jsnone
+if ne js_type tape a jsobj
+mc_err 32602 mbadobj
+ret
+end
+end
+o = js_off tape nt
+if js_streq src o mtn01
+mc_where src tape a tmp
+ret
+end
+if js_streq src o mtn13
+mc_board tape a
+ret
+end
+if not mc_build src tape a tmp o
+mc_err 32602 mmetool
+ret
+end
+if mc_done tape a
+mc_exec
+end
+end
+
+fn pu_memb2 src view uchar * tape view uint * o ulong key view uchar * to ulong
+k = js_first tape o
+while ne k jsnone bound 999999
+if js_streq src js_off tape k key
+ret add k 1
+end
+k = js_mnext tape k
+end
+ret jsnone
+end
+
+note mc_build: argv for the single-exec tools; false for an unknown tool name
+fn mc_build src view uchar * tape view uint * a ulong tmp edit uchar * o ulong to bool
+if js_streq src o mtn02
+mc_bin mbmap true
+syn_at mctree
+mc_bool src tape a maktext mftext
+ret true
+end
+if js_streq src o mtn03
+mc_bin mbmap true
+syn_at mccheck
+ret true
+end
+if js_streq src o mtn04
+mc_bin mbclaims true
+syn_at mcclaim
+mc_req1
+mc_str src tape a tmp makagent mfagent
+mc_req1
+mc_str src tape a tmp maksess mfsess
+mc_req1
+mc_str src tape a tmp maktarg mftarg
+mc_int src tape a makttl mfttl
+mc_str src tape a tmp makmode mfmode
+mc_str src tape a tmp makstate mfstate
+mc_str src tape a tmp makint mfint
+mc_arr src tape a tmp makevid mfevid
+ret true
+end
+if js_streq src o mtn05
+mc_bin mbclaims true
+syn_at mcrenew
+mc_req1
+mc_str src tape a tmp makagent mfagent
+mc_req1
+mc_str src tape a tmp makid mfid
+mc_int src tape a makttl mfttl
+ret true
+end
+if js_streq src o mtn06
+mc_bin mbclaims true
+syn_at mcrel
+mc_req1
+mc_str src tape a tmp makagent mfagent
+mc_req1
+mc_str src tape a tmp makid mfid
+mc_str src tape a tmp makstate mfstate
+mc_arr src tape a tmp makevid mfevid
+ret true
+end
+if js_streq src o mtn07
+mc_bin mbclaims true
+syn_at mcstate
+mc_req1
+mc_str src tape a tmp makagent mfagent
+mc_req1
+mc_str src tape a tmp makid mfid
+mc_req1
+mc_str src tape a tmp makstate mfstate
+mc_arr src tape a tmp makevid mfevid
+ret true
+end
+if js_streq src o mtn08
+mc_bin mbclaims true
+syn_at mcwho
+mc_req1
+mc_str src tape a tmp maktarg mempty
+ret true
+end
+if js_streq src o mtn09
+mc_bin mbclaims true
+syn_at mclist
+mc_bool src tape a makall mfall
+ret true
+end
+if js_streq src o mtn10
+mc_bin mbclaims true
+syn_at mcconf
+ret true
+end
+if js_streq src o mtn11
+mc_bin mbclaims true
+syn_at mcver
+ret true
+end
+if js_streq src o mtn12
+mc_bin mbpulse true
+syn_at mcrun
+syn_at mfcbin
+m = syn_mark
+syn_ps get gop 0 get gopl 0
+syn_pt mbclaims
+syn_ap m syn_len m
+syn_rew m
+mc_bool src tape a makalert mfalert
+ret true
+end
+if js_streq src o mtn14
+mc_bin mbclaims true
+syn_at mclist
+syn_at mfprefix
+mc_req1
+mc_str src tape a tmp maklane mempty
+ret true
+end
+ret false
+end
+
+note ======== one request line ========
+fn mc_req src view uchar * tape edit uint * tmp edit uchar * to void
+base = syn_mark
+put gid 1 0
+r = js_parse src tape len src
+if lt r 0
+mc_err 32700 mmeparse
+ret
+end
+if ne js_type tape 0 jsobj
+mc_err 32600 mmeinv
+ret
+end
+iv = pu_rmemb src tape mkid
+if ne iv jsnone
+t = js_type tape iv
+if and and ne t jsstr ne t jsnum ne t jsnull
+mc_err 32600 mmeinv
+ret
+end
+m = syn_mark
+syn_pa src js_off tape iv js_span tape iv
+put gid 0 m
+put gid 1 js_span tape iv
+end
+mv = pu_rmemb src tape mkmeth
+jv = pu_rmemb src tape mkjrpc
+ok = and ne mv jsnone ne jv jsnone
+if ok
+ok = and eq js_type tape mv jsstr eq js_type tape jv jsstr
+end
+if ok
+ok = js_streq src js_off tape jv mk20
+end
+if eq iv jsnone
+syn_rew base
+ret
+end
+if not ok
+mc_err 32600 mmeinv
+syn_rew base
+ret
+end
+o = js_off tape mv
+if js_streq src o mminit
+mc_okt mrinit
+else
+if js_streq src o mmping
+mc_okt mrempty
+else
+if js_streq src o mmlist
+mc_list
+else
+if js_streq src o mmcall
+pv = pu_rmemb src tape mkpar
+mc_call src tape pv tmp
+else
+mc_err 32601 mmenome
+end
+end
+end
+end
+syn_rew base
+end
+
+note ======== main ========
+fn mc_envopt i ulong t view uchar * s view uchar * to bool
+b = new uchar 8192 0
+for e ulong envcnt
+n = envread e b 0 len b
+if gt n long len t
+ok = true
+for j ulong len t
+if ne get b j get t j
+ok = false
+end
+end
+if ok
+m = syn_mark
+syn_pa b len t sub ulong n len t
+syn_pt s
+put gop i m
+put gopl i syn_len m
+ret true
+end
+end
+end
+ret false
+end
+
+fn mc_args to void
+n = argcnt
+i = ulong 1
+while lt i n bound 1000
+o = syn_arg i
+l = get gxs 2
+k = ulong 99
+if syn_seq o l mbindir
+k = 0
+end
+if syn_seq o l mhome
+k = 1
+end
+if or eq k 99 ge add i 1 n
+syn_die musage 64
+end
+v = syn_arg add i 1
+vl = get gxs 2
+if or eq vl 0 ne get gsp v 47
+syn_die musage 64
+end
+put gop k v
+put gopl k vl
+i = add i 2
+end
+if eq get gopl 0 0
+syn_die mnobin 64
+end
+if eq get gopl 1 0
+if not mc_envopt 1 menvh mempty
+if not mc_envopt 1 menvhm mdhome
+syn_die mnohome 64
+end
+end
+end
+if eq get gopl 1 0
+syn_die mnohome 64
+end
+end
+
+fn mc_loop to void
+buf = new uchar 1048576 0
+rd = new uchar 65536 0
+tape = new uint 524288 0
+tmp = new uchar 65536 0
+bl = ulong 0
+over = false
+eof = false
+while not eof bound 4294967295
+r = read 0 rd 0 len rd
+if le r 0
+eof = true
+r = 0
+end
+for i ulong ulong r
+c = get rd i
+if eq c 10
+if over
+put gid 1 0
+mc_err 32700 mmeparse
+else
+mc_line buf bl tape tmp
+end
+bl = 0
+over = false
+else
+if lt bl len buf
+put buf bl c
+bl = add bl 1
+else
+over = true
+end
+end
+end
+end
+if and gt bl 0 not over
+mc_line buf bl tape tmp
+end
+end
+
+note mc_line: strip a trailing CR, skip blank lines, parse and answer
+fn mc_line buf view uchar * bl ulong tape edit uint * tmp edit uchar * to void
+n = bl
+if and gt n 0 eq get buf sub n 1 13
+n = sub n 1
+end
+blank = true
+for i ulong n
+c = get buf i
+if and and ne c 32 ne c 9 ne c 13
+blank = false
+end
+end
+if blank
+ret
+end
+r = js_init tape 983040 64
+mc_req part buf 0 n tape tmp
+end
+
+fn main to int
+mc_args
+mc_loop
+ret 0
+end
