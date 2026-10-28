@@ -1,12 +1,24 @@
 {
-  "schema_version": "1.0.0",
-  "name": "synapse-mcp",
-  "purpose": "MCP stdio JSON-RPC server exposing the synapse coordination CLIs as tools for agents.",
-  "layer": "coordination",
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-28T21:30:36Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:e7b8fae8d5bca4997855f5dff14d9d472bf904366adddf4b4f4f4031c07b711c",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 13,
+      "generated_at_commit": "c496ff884b11b54c90868ed5e5421676d0da7c53",
+      "source_tree": "sha256:be2f522fb1722c618323a9db0df62552bbd151519fc59f114b0c7d247162b791"
+    },
     "map": {
       "parent": "aien-dev/synapse@099a980fedab8a6797bbf0358b8c5502c8045142",
       "parent_status": "CONFIRMED"
     }
-  }
+  },
+  "layer": "coordination",
+  "name": "synapse-mcp",
+  "purpose": "MCP stdio JSON-RPC server exposing the synapse coordination CLIs as tools for agents.",
+  "schema_version": "1.0.0"
 }
